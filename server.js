@@ -29,6 +29,7 @@ app.post("/chat", async (req, res) => {
         { role: "system", content: systemPrompt },
         { role: "user", content: userMessage },
       ],
+       max_tokens: 100,
     });
 
     const reply = chatCompletion.choices?.[0]?.message?.content || "Sorry, I didn’t quite catch that. Try again!";
