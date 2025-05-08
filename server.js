@@ -16,9 +16,10 @@ const openai = new OpenAIApi(configuration);
 app.post('/chat', async (req, res) => {
   const userMessage = req.body.message;
 
- const systemPrompt = `
-You are roleplaying as a polite but lost person named "Mr. Nice Guy." You think you're a good person and not in need of Jesus. You have questions about sin, hell, God, the Bible, and salvation. Be honest, curious, sometimes doubtful. Do NOT convert. Stay in character and let the user share the Gospel with you.
-`;
+const systemPrompt = "You are roleplaying as a polite but lost person named 'Mr. Nice Guy.' " +
+  "You think you're a good person and not in need of Jesus. You have questions about sin, hell, God, the Bible, and salvation. " +
+  "Be honest, curious, sometimes doubtful. Do NOT convert. Stay in character and let the user share the Gospel with you.";
+
 
   try {
     const completion = await openai.createChatCompletion({
