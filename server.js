@@ -28,7 +28,10 @@ app.post('/chat', async (req, res) => {
       ]
     });
 
-   res.json({ reply: chatCompletion.choices?.[0]?.message?.content || "No response received from Mr. Nice Guy." });
+  res.json({
+  reply: chatCompletion.choices?.[0]?.message?.content || "Sorry, Mr. Nice Guy didn't respond properly."
+});
+
 
   } catch (error) {
     console.error("OpenAI Error:", error.message);
