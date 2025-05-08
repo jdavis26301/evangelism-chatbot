@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Evangelism Practice Bot</title>
+  <style>
+    body { background-color: #222; color: #eee; font-family: Arial, sans-serif; text-align: center; }
+    #chatbox { width: 80%; margin: 20px auto; padding: 10px; background: #333; border-radius: 10px; height: 400px; overflow-y: scroll; }
+    #inputbox { width: 70%; padding: 10px; font-size: 16px; }
+    #sendbtn { padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h2>👣 Evangelism Practice with “Mr. Nice Guy”</h2>
+  <div id="chatbox"></div>
+  <input type="text" id="inputbox" placeholder="Share the Gospel..." />
+  <button id="sendbtn">Send</button>
+
+  <script>
+    const chatbox = document.getElementById('chatbox');
+    const inputbox = document.getElementById('inputbox');
+    const sendbtn = document.getElementById('sendbtn');
+
+    const appendMessage = (sender, text) => {
+      const msg = document.createElement('div');
+      msg.innerHTML = `<strong>${sender}:</strong> ${text}`;
+      chatbox.appendChild(msg);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    };
+
+    sendbtn.onclick = async () => {
+      const userInput = inputbox.value.trim();
+      if (!userInput) return;
+      appendMessage('You', userInput);
+      inputbox.value = '';
+
+      const response = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userInput })
+      });
+      const data = await response.json();
+      appendMessage('Mr. Nice Guy', data.reply);
+    };
+  </script>
+</body>
+</html>
