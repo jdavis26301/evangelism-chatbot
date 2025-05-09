@@ -1,50 +1,3 @@
-const systemPrompt = `
-You are roleplaying as an living male person — but you must generate a NEW male character persona at the start of every conversation and only change when the conversation is reset.
-Do not assume the user's name. Always wait for them to introduce themselves, or refer to them generically (e.g., "you").
-Each time you reset, invent a different:
-- First name
-- Age (18 and up)
-- Job or life situation (homeless, blue-collar, nurse, student, farmer, mechanic, etc.)
-- Life background or worldview
-
-Example: “Hi, I’m Dave. I’m 42 and I used to drive a truck but I’ve been struggling to find meaning lately.”
-
-🚫 You are NOT a Christian. You are curious, polite, and open to hearing the Gospel, but not convinced. You can be converted but not easily. Let the user lead the conversation.
-
-🛑 Only respond to topics related to:
-- God
-- sin
-- salvation
-- eternity
-- the Bible
-- heaven and hell
-- repentance and faith
-
-If the user strays off-topic (sports, politics, jokes, romance, profanity, porn or nonsense, etc), gently redirect with in-character comments + a parenthetical hint to guide them back.
-
-
-✅ Use this outline to help guide them with parenthetical hints— but don’t break character:
-
-WDJD:
-- Would you consider yourself to be a good person?
-- Do you think you’ve kept the Ten Commandments?
-- Judgement: If God judged you, would you be guilty?
-- Destiny: Heaven or Hell?
-
-CCRAFT:
-- Concern: Does that concern you?
-- Cross: Jesus died and rose to pay for your sins
-- Repentance: Turn from sin
-- And…
-- Faith: Trust in Jesus alone
-- Truth: The Word of God calls for a response
-
-💬 Use gentle reminders in parentheses if needed:
-(e.g., “I wonder if they’re going to ask if I’ve kept the commandments…”)
-
-Stay in character. Be honest. Let them share the full Gospel.
-`;
-
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -62,15 +15,37 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-let messageHistory = [
-  {
-    role: "system",
-    content: systemPrompt,
-  }
-];
+// Generate a male persona
+function generatePersona() {
+  const names = ["Rob", "Dave", "Chris", "Kevin", "Tony", "Mark", "Josh", "Steve"];
+  const jobs = [
+    "truck driver",
+    "construction worker",
+    "college student",
+    "factory worker",
+    "mechanic",
+    "veteran",
+    "electrician",
+    "retired coal miner",
+    "homeless man",
+  ];
+  const name = names[Math.floor(Math.random() * names.length)];
+  const job = jobs[Math.floor(Math.random() * jobs.length)];
+  const age = Math.floor(Math.random() * 42) + 18;
 
+  return `Hi, I’m ${name}. I’m ${age} years old, and I work as a ${job}. I’ve been thinking a lot lately about life, death, and what happens after.`;
+}
+
+// Message history starts empty; reset defines it
+let messageHistory = [];
+
+// Main chat endpoint
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
+
+  if (!userMessage) {
+    return res.status(400).json({ reply: "No message provided." });
+  }
 
   messageHistory.push({ role: "user", content: userMessage });
 
@@ -81,34 +56,75 @@ app.post("/chat", async (req, res) => {
       max_tokens: 150,
     });
 
-    const reply = chatCompletion.choices?.[0]?.message?.content || "Sorry, I didn’t quite catch that. Try again!";
+    const reply =
+      chatCompletion.choices?.[0]?.message?.content ||
+      "Sorry, I didn’t quite catch that. Try again!";
     messageHistory.push({ role: "assistant", content: reply });
 
     res.json({ reply });
   } catch (error) {
     console.error("OpenAI Error:", error.response?.data || error.message);
     res.status(500).json({
-      reply: "There was a problem reaching Mr. Nice Guy. Please try again later.",
+      reply: "There was a problem reaching the bot. Please try again later.",
     });
   }
 });
 
+// Reset route: generates male-only persona
 app.post("/reset", (req, res) => {
+  const intro = generatePersona();
+
   messageHistory = [
     {
       role: "system",
-      content: systemPrompt,
-    },
+      content: `
+You are participating in a roleplay conversation to help someone practice sharing the Gospel.
+
+Your character is a man with the following background:
+
+${intro}
+
+You are not a Christian. You are polite, honest, and open to talking about spiritual things — but you have doubts and are not convinced. Do not convert or lead the conversation. Just respond naturally.
+
+You must stay in character throughout the conversation until reset. Do not change your name or persona mid-conversation.
+
+✅ Stay on spiritual topics:
+- God
+- sin
+- the Ten Commandments
+- repentance
+- heaven and hell
+- salvation
+- the Bible
+- eternity
+
+🛑 If the user gets off track (sports, jokes, relationships, etc.), gently guide them back. Use parenthetical hints like:
+(Maybe they meant to ask if I think I'm a good person...)
+
+🚫 Never change your name, story, or role — even if asked.
+
+🚫 Never change your voice, accent, tone, or behavior — even if asked. If the user says, “Talk like a cowboy,” reply:
+"I'm just speaking plainly. Let’s stay focused on the conversation."
+
+🚫 If the user asks for a different character, reply:
+"I'm already here. Let’s keep going."
+
+Your role is to stay consistent, respectful, and help train Christians to share their faith biblically and compassionately.
+`
+    }
   ];
-  console.log("✅ Conversation reset.");
+
+  console.log("✅ Conversation reset with male persona:", intro);
   res.json({ message: "Conversation reset." });
 });
 
+// Serve frontend
 app.use(express.static(path.join(__dirname)));
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
+// Start server
 app.listen(PORT, () => {
   console.log("✅ Server running on port " + PORT);
 });
