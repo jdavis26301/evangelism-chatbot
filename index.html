@@ -61,10 +61,8 @@
       chatbox.scrollTop = chatbox.scrollHeight;
     };
 
-    sendbtn.onclick = async () => {
-      const userInput = inputbox.value.trim();
-      if (!userInput) return;
-
+    const sendMessage = async (userInput) => {
+      if (!userInput.trim()) return;
       appendMessage('You', userInput);
       inputbox.value = '';
 
@@ -78,6 +76,10 @@
       appendMessage('Mr. Nice Guy', data.reply);
     };
 
+    sendbtn.onclick = () => {
+      sendMessage(inputbox.value);
+    };
+
     resetbtn.onclick = async () => {
       const response = await fetch("/reset", { method: "POST" });
       if (response.ok) {
@@ -88,7 +90,7 @@
       }
     };
 
-    // 🎤 Microphone Dictation
+    // 🎤 Microphone Dictation (with auto-send)
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
@@ -104,23 +106,4 @@
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         inputbox.value = transcript;
-        micbtn.innerText = '🎤 Speak';
-      };
-
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        micbtn.innerText = '🎤 Try Again';
-      };
-
-      recognition.onend = () => {
-        if (micbtn.innerText === '🎙️ Listening...') {
-          micbtn.innerText = '🎤 Speak';
-        }
-      };
-    } else {
-      micbtn.disabled = true;
-      micbtn.innerText = '🎤 Not Supported';
-    }
-  </script>
-</body>
-</html>
+        micbtn.innerText = '🎤
