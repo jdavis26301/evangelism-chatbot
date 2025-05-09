@@ -4,10 +4,36 @@
   <meta charset="UTF-8">
   <title>Evangelism Practice Bot</title>
   <style>
-    body { background-color: #222; color: #eee; font-family: Arial, sans-serif; text-align: center; }
-    #chatbox { width: 80%; margin: 20px auto; padding: 10px; background: #333; border-radius: 10px; height: 400px; overflow-y: scroll; text-align: left; }
-    #inputbox { width: 70%; padding: 10px; font-size: 16px; }
-    #sendbtn, #resetbtn { padding: 10px 20px; font-size: 16px; margin: 5px; cursor: pointer; }
+    body {
+      background-color: #222;
+      color: #eee;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    #chatbox {
+      width: 80%;
+      margin: 20px auto;
+      padding: 10px;
+      background: #333;
+      border-radius: 10px;
+      height: 400px;
+      overflow-y: scroll;
+      text-align: left;
+    }
+
+    #inputbox {
+      width: 70%;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    #sendbtn, #resetbtn, #micbtn {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 5px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -19,12 +45,14 @@
   <br />
   <button id="sendbtn">Send</button>
   <button id="resetbtn">🔄 Reset Conversation</button>
+  <button id="micbtn">🎤 Speak</button>
 
   <script>
     const chatbox = document.getElementById('chatbox');
     const inputbox = document.getElementById('inputbox');
     const sendbtn = document.getElementById('sendbtn');
     const resetbtn = document.getElementById('resetbtn');
+    const micbtn = document.getElementById('micbtn');
 
     const appendMessage = (sender, text) => {
       const msg = document.createElement('div');
@@ -59,7 +87,40 @@
         appendMessage("System", "Failed to reset the conversation.");
       }
     };
+
+    // 🎤 Microphone Dictation
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      micbtn.onclick = () => {
+        recognition.start();
+        micbtn.innerText = '🎙️ Listening...';
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        inputbox.value = transcript;
+        micbtn.innerText = '🎤 Speak';
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        micbtn.innerText = '🎤 Try Again';
+      };
+
+      recognition.onend = () => {
+        if (micbtn.innerText === '🎙️ Listening...') {
+          micbtn.innerText = '🎤 Speak';
+        }
+      };
+    } else {
+      micbtn.disabled = true;
+      micbtn.innerText = '🎤 Not Supported';
+    }
   </script>
 </body>
 </html>
-
