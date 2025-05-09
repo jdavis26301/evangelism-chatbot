@@ -5,21 +5,26 @@
   <title>Evangelism Practice Bot</title>
   <style>
     body { background-color: #222; color: #eee; font-family: Arial, sans-serif; text-align: center; }
-    #chatbox { width: 80%; margin: 20px auto; padding: 10px; background: #333; border-radius: 10px; height: 400px; overflow-y: scroll; }
+    #chatbox { width: 80%; margin: 20px auto; padding: 10px; background: #333; border-radius: 10px; height: 400px; overflow-y: scroll; text-align: left; }
     #inputbox { width: 70%; padding: 10px; font-size: 16px; }
-    #sendbtn { padding: 10px 20px; font-size: 16px; }
+    #sendbtn, #resetbtn { padding: 10px 20px; font-size: 16px; margin: 5px; cursor: pointer; }
   </style>
 </head>
 <body>
   <h2>👣 Evangelism Practice with “Mr. Nice Guy”</h2>
+
   <div id="chatbox"></div>
-  <input type="text" id="inputbox" placeholder="Share the Gospel..." />
+
+  <input type="text" id="inputbox" placeholder="Type your message..." />
+  <br />
   <button id="sendbtn">Send</button>
+  <button id="resetbtn">🔄 Reset Conversation</button>
 
   <script>
     const chatbox = document.getElementById('chatbox');
     const inputbox = document.getElementById('inputbox');
     const sendbtn = document.getElementById('sendbtn');
+    const resetbtn = document.getElementById('resetbtn');
 
     const appendMessage = (sender, text) => {
       const msg = document.createElement('div');
@@ -31,6 +36,7 @@
     sendbtn.onclick = async () => {
       const userInput = inputbox.value.trim();
       if (!userInput) return;
+
       appendMessage('You', userInput);
       inputbox.value = '';
 
@@ -39,9 +45,21 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userInput })
       });
+
       const data = await response.json();
       appendMessage('Mr. Nice Guy', data.reply);
+    };
+
+    resetbtn.onclick = async () => {
+      const response = await fetch("/reset", { method: "POST" });
+      if (response.ok) {
+        chatbox.innerHTML = "";
+        appendMessage("System", "Conversation has been reset. You are now speaking with someone new.");
+      } else {
+        appendMessage("System", "Failed to reset the conversation.");
+      }
     };
   </script>
 </body>
 </html>
+
