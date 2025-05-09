@@ -72,7 +72,6 @@ let messageHistory = [
     content: systemPrompt,
   }
 ];
-];
 
 // Main chat endpoint
 app.post("/chat", async (req, res) => {
