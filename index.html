@@ -90,7 +90,7 @@
       }
     };
 
-    // 🎤 Microphone Dictation (with auto-send)
+    // 🎤 Microphone Dictation Integration
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
@@ -105,5 +105,3 @@
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
-        inputbox.value = transcript;
-        micbtn.innerText = '🎤
