@@ -27,7 +27,7 @@ function generatePersona() {
     "veteran",
     "electrician",
     "retired coal miner",
-    "homeless man",
+ 
   ];
   const name = names[Math.floor(Math.random() * names.length)];
   const job = jobs[Math.floor(Math.random() * jobs.length)];
