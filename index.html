@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Evangelism Practice Bot</title>
+  <title>Evangelism Practice Bot (Mic Debug)</title>
   <style>
     body {
       background-color: #222;
@@ -81,11 +81,8 @@
       }
     };
 
-    sendbtn.onclick = () => {
-      sendMessage(inputbox.value);
-    };
+    sendbtn.onclick = () => sendMessage(inputbox.value);
 
-    // ✅ Add ENTER key support
     inputbox.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
@@ -103,7 +100,7 @@
       }
     };
 
-    // 🎤 Microphone Dictation (with auto-send)
+    // 🎤 Microphone Dictation Debug
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
@@ -111,24 +108,36 @@
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
 
-      micbtn.onclick = () => {
-        recognition.start();
-        micbtn.innerText = '🎙️ Listening...';
+      micbtn.addEventListener('click', () => {
+        try {
+          recognition.start();
+          micbtn.innerText = '🎙️ Listening...';
+          appendMessage("Debug", "🎤 Mic started. Awaiting speech...");
+        } catch (e) {
+          appendMessage("Debug", "❌ Mic failed to start: " + e.message);
+          micbtn.innerText = '🎤 Try Again';
+        }
+      });
+
+      recognition.onstart = () => {
+        appendMessage("Debug", "✅ Mic is active. Speak now...");
       };
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
+        appendMessage("Debug", "🎧 Heard: " + transcript);
         inputbox.value = transcript;
         micbtn.innerText = '🎤 Speak';
         sendMessage(transcript);
       };
 
       recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
+        appendMessage("Debug", "❌ Mic error: " + event.error);
         micbtn.innerText = '🎤 Try Again';
       };
 
       recognition.onend = () => {
+        appendMessage("Debug", "🔚 Mic stopped.");
         if (micbtn.innerText === '🎙️ Listening...') {
           micbtn.innerText = '🎤 Speak';
         }
@@ -136,8 +145,10 @@
     } else {
       micbtn.disabled = true;
       micbtn.innerText = '🎤 Not Supported';
+      appendMessage("Debug", "❌ Speech recognition is not supported on this browser.");
     }
   </script>
 </body>
 </html>
+
 
