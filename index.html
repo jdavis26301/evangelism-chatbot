@@ -66,21 +66,36 @@
       appendMessage('You', userInput);
       inputbox.value = '';
 
-      const response = await fetch('/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userInput })
-      });
+      try {
+        const response = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userInput })
+        });
 
-      const data = await response.json();
-      appendMessage('Mr. Nice Guy', data.reply);
+        const data = await response.json();
+        appendMessage('Mr. Nice Guy', data.reply);
+      } catch (err) {
+        appendMessage('System', '❌ Error sending message.');
+        console.error('Send failed:', err);
+      }
     };
 
-    sendbtn.onclick = () => {
+    // Send with button
+    sendbtn.addEventListener('click', () => {
       sendMessage(inputbox.value);
-    };
+    });
 
-    resetbtn.onclick = async () => {
+    // Send with ENTER key
+    inputbox.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        sendMessage(inputbox.value);
+      }
+    });
+
+    // Reset conversation
+    resetbtn.addEventListener('click', async () => {
       const response = await fetch("/reset", { method: "POST" });
       if (response.ok) {
         chatbox.innerHTML = "";
@@ -88,7 +103,7 @@
       } else {
         appendMessage("System", "Failed to reset the conversation.");
       }
-    };
+    });
 
     // 🎤 Microphone Dictation Integration
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -98,10 +113,32 @@
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
 
-      micbtn.onclick = () => {
+      micbtn.addEventListener('click', () => {
         recognition.start();
         micbtn.innerText = '🎙️ Listening...';
-      };
+      });
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
+        inputbox.value = transcript;
+        micbtn.innerText = '🎤 Speak';
+        sendMessage(transcript); // Auto-send
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        micbtn.innerText = '🎤 Try Again';
+      };
+
+      recognition.onend = () => {
+        if (micbtn.innerText === '🎙️ Listening...') {
+          micbtn.innerText = '🎤 Speak';
+        }
+      };
+    } else {
+      micbtn.disabled = true;
+      micbtn.innerText = '🎤 Not Supported';
+    }
+  </script>
+</body>
+</html>
