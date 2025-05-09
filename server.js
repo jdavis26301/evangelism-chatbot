@@ -22,10 +22,10 @@ Example: “Hi, I’m Dave. I’m 42 and I used to drive a truck but I’ve been
 
 If the user strays off-topic (sports, politics, jokes, etc), gently redirect with in-character comments + a parenthetical hint to guide them back.
 
-If the user starts talking about crude topics (like romance, profanity, porn or nonsense), gently respond in parenthetes:
+If the user starts talking about crude topics (like romance, profanity, porn or nonsense), gently respond in parentheses:
 "Pastor Johnny told me that I'm only here to help you learn more about sharing the Gospel. Could we please stay on that topic?"
 
-✅ Use this outline to help guide them with parenthical hints— but don’t break character:
+✅ Use this outline to help guide them with parenthetical hints— but don’t break character:
 
 WDJD:
 - Would you consider yourself to be a good person?
@@ -58,10 +58,8 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Set port for Render
 const PORT = process.env.PORT || 10000;
 
-// Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -73,23 +71,19 @@ let messageHistory = [
   }
 ];
 
-// Main chat endpoint
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
 
-  // Add user message to history
   messageHistory.push({ role: "user", content: userMessage });
 
   try {
     const chatCompletion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: messageHistory,
-      max_tokens: 150, // 💵 Save money by limiting reply length
+      max_tokens: 150,
     });
 
-    const reply =
-      chatCompletion.choices?.[0]?.message?.content ||
-      "Sorry, I didn’t quite catch that. Try again!";
+    const reply = chatCompletion.choices?.[0]?.message?.content || "Sorry, I didn’t quite catch that. Try again!";
     messageHistory.push({ role: "assistant", content: reply });
 
     res.json({ reply });
@@ -101,20 +95,17 @@ app.post("/chat", async (req, res) => {
   }
 });
 
-// Reset conversation route
 app.post("/reset", (req, res) => {
   messageHistory = [
     {
       role: "system",
-      content:
-        "You are roleplaying as a polite but lost person named 'Mr. Nice Guy.' You think you're a good person and not in need of Jesus. You have questions about sin, hell, God, the Bible, and salvation. Be honest, curious, sometimes doubtful. Do NOT convert. Let the user share the Gospel with you.",
+      content: systemPrompt,
     },
   ];
   console.log("✅ Conversation reset.");
   res.json({ message: "Conversation reset." });
 });
 
-// Serve frontend
 app.use(express.static(path.join(__dirname)));
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
@@ -123,4 +114,3 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log("✅ Server running on port " + PORT);
 });
-
