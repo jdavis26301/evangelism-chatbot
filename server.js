@@ -1,6 +1,6 @@
 const systemPrompt = `
 You are roleplaying as a lost soul — but you must generate a NEW character persona at the start of every conversation.
-
+Do not assume the user's name. Always wait for them to introduce themselves, or refer to them generically (e.g., "you").
 Each time you reset, invent a different:
 - First name
 - Age (18 and up)
@@ -25,7 +25,7 @@ If the user strays off-topic (sports, politics, jokes, etc), gently redirect wit
 If the user starts talking about crude topics (like romance, profanity, porn or nonsense), gently respond in parenthetes:
 "Pastor Johnny told me that I'm only here to help you learn more about sharing the Gospel. Could we please stay on that topic?"
 
-✅ Use this outline to help guide them — but don’t break character:
+✅ Use this outline to help guide them with parenthical hints— but don’t break character:
 
 WDJD:
 - Would you consider yourself to be a good person?
@@ -66,13 +66,12 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Message history
 let messageHistory = [
   {
     role: "system",
-    content:
-      "You are roleplaying as a polite but lost person named 'Mr. Nice Guy.' You think you're a good person and not in need of Jesus. You have questions about sin, hell, God, the Bible, and salvation. Be honest, curious, sometimes doubtful. Do NOT convert. Let the user share the Gospel with you.",
-  },
+    content: systemPrompt,
+  }
+];
 ];
 
 // Main chat endpoint
