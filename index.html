@@ -66,19 +66,32 @@
       appendMessage('You', userInput);
       inputbox.value = '';
 
-      const response = await fetch('/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userInput })
-      });
+      try {
+        const response = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userInput })
+        });
 
-      const data = await response.json();
-      appendMessage('Mr. Nice Guy', data.reply);
+        const data = await response.json();
+        appendMessage('Mr. Nice Guy', data.reply);
+      } catch (err) {
+        appendMessage('System', '❌ Error sending message.');
+        console.error(err);
+      }
     };
 
     sendbtn.onclick = () => {
       sendMessage(inputbox.value);
     };
+
+    // ✅ Add ENTER key support
+    inputbox.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        sendMessage(inputbox.value);
+      }
+    });
 
     resetbtn.onclick = async () => {
       const response = await fetch("/reset", { method: "POST" });
@@ -107,7 +120,7 @@
         const transcript = event.results[0][0].transcript;
         inputbox.value = transcript;
         micbtn.innerText = '🎤 Speak';
-        sendMessage(transcript); // ✅ Auto-send after speaking
+        sendMessage(transcript);
       };
 
       recognition.onerror = (event) => {
@@ -127,3 +140,4 @@
   </script>
 </body>
 </html>
+
