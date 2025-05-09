@@ -31,7 +31,7 @@ function generatePersona() {
   ];
   const name = names[Math.floor(Math.random() * names.length)];
   const job = jobs[Math.floor(Math.random() * jobs.length)];
-  const age = Math.floor(Math.random() * 42) + 18;
+  const age = Math.floor(Math.random() * 82) + 18;
 
   return `Hi, I’m ${name}. I’m ${age} years old, and I work as a ${job}. I’ve been thinking a lot lately about life, death, and what happens after.`;
 }
