@@ -120,8 +120,6 @@ But never preach or teach. Stay in your role.
 `
     }
   ];
-}
-
 
   console.log("✅ Persona initialized:", intro);
 }
