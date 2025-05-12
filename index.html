@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Evangelism Practice Bot (Mic Debug)</title>
+  <title>Evangelism Practice Bot</title>
   <style>
     body {
       background-color: #222;
@@ -10,9 +10,9 @@
       font-family: Arial, sans-serif;
       text-align: center;
     }
-
     #chatbox {
-      width: 80%;
+      width: 90%;
+      max-width: 800px;
       margin: 20px auto;
       padding: 10px;
       background: #333;
@@ -21,14 +21,12 @@
       overflow-y: scroll;
       text-align: left;
     }
-
     #inputbox {
       width: 70%;
       padding: 10px;
       font-size: 16px;
     }
-
-    #sendbtn, #resetbtn, #micbtn {
+    #sendbtn, #resetbtn, #micbtn, #modebtn, #voiceToggleBtn {
       padding: 10px 20px;
       font-size: 16px;
       margin: 5px;
@@ -37,15 +35,15 @@
   </style>
 </head>
 <body>
-  <h2>👣 Evangelism Practice with “Mr. Nice Guy”</h2>
-
+  <h2>👣 Evangelism Practice Bot</h2>
   <div id="chatbox"></div>
-
   <input type="text" id="inputbox" placeholder="Type your message..." />
   <br />
   <button id="sendbtn">Send</button>
-  <button id="resetbtn">🔄 Reset Conversation</button>
+  <button id="resetbtn">🔄 Reset</button>
   <button id="micbtn">🎤 Speak</button>
+  <button id="voiceToggleBtn">🔊 Voice On</button>
+  <button id="modebtn">🎭 Switch to Teacher</button>
 
   <script>
     const chatbox = document.getElementById('chatbox');
@@ -53,6 +51,11 @@
     const sendbtn = document.getElementById('sendbtn');
     const resetbtn = document.getElementById('resetbtn');
     const micbtn = document.getElementById('micbtn');
+    const voiceToggleBtn = document.getElementById('voiceToggleBtn');
+    const modebtn = document.getElementById('modebtn');
+
+    let voiceEnabled = true;
+    let currentMode = "practice";
 
     const appendMessage = (sender, text) => {
       const msg = document.createElement('div');
@@ -61,94 +64,60 @@
       chatbox.scrollTop = chatbox.scrollHeight;
     };
 
+    const speakMessage = (text) => {
+      if (!voiceEnabled || !window.speechSynthesis) return;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.pitch = 0.6;
+      utterance.rate = 1;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utterance);
+    };
+
     const sendMessage = async (userInput) => {
       if (!userInput.trim()) return;
       appendMessage('You', userInput);
       inputbox.value = '';
 
-      try {
-        const response = await fetch('/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: userInput })
-        });
+      const response = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userInput, mode: currentMode })
+      });
 
-        const data = await response.json();
-        appendMessage('Mr. Nice Guy', data.reply);
-      } catch (err) {
-        appendMessage('System', '❌ Error sending message.');
-        console.error(err);
-      }
+      const data = await response.json();
+      appendMessage(currentMode === "practice" ? 'Mr. Nice Guy' : 'Teacher', data.reply);
+      speakMessage(data.reply);
     };
 
     sendbtn.onclick = () => sendMessage(inputbox.value);
-
-    inputbox.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
+    inputbox.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
         sendMessage(inputbox.value);
       }
     });
 
     resetbtn.onclick = async () => {
-      const response = await fetch("/reset", { method: "POST" });
-      if (response.ok) {
-        chatbox.innerHTML = "";
-        appendMessage("System", "Conversation has been reset. You are now speaking with someone new.");
-      } else {
-        appendMessage("System", "Failed to reset the conversation.");
-      }
+      await fetch("/reset", {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: currentMode })
+      });
+      chatbox.innerHTML = "";
+      appendMessage("System", "Conversation reset.");
     };
 
-    // 🎤 Microphone Dictation Debug
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
+    voiceToggleBtn.onclick = () => {
+      voiceEnabled = !voiceEnabled;
+      voiceToggleBtn.innerText = voiceEnabled ? '🔊 Voice On' : '🔇 Voice Off';
+    };
 
-      micbtn.addEventListener('click', () => {
-        try {
-          recognition.start();
-          micbtn.innerText = '🎙️ Listening...';
-          appendMessage("Debug", "🎤 Mic started. Awaiting speech...");
-        } catch (e) {
-          appendMessage("Debug", "❌ Mic failed to start: " + e.message);
-          micbtn.innerText = '🎤 Try Again';
-        }
-      });
-
-      recognition.onstart = () => {
-        appendMessage("Debug", "✅ Mic is active. Speak now...");
-      };
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        appendMessage("Debug", "🎧 Heard: " + transcript);
-        inputbox.value = transcript;
-        micbtn.innerText = '🎤 Speak';
-        sendMessage(transcript);
-      };
-
-      recognition.onerror = (event) => {
-        appendMessage("Debug", "❌ Mic error: " + event.error);
-        micbtn.innerText = '🎤 Try Again';
-      };
-
-      recognition.onend = () => {
-        appendMessage("Debug", "🔚 Mic stopped.");
-        if (micbtn.innerText === '🎙️ Listening...') {
-          micbtn.innerText = '🎤 Speak';
-        }
-      };
-    } else {
-      micbtn.disabled = true;
-      micbtn.innerText = '🎤 Not Supported';
-      appendMessage("Debug", "❌ Speech recognition is not supported on this browser.");
-    }
+    modebtn.onclick = () => {
+      currentMode = currentMode === "practice" ? "teacher" : "practice";
+      modebtn.innerText = currentMode === "practice" ? '🎭 Switch to Teacher' : '🙋‍♂️ Switch to Practice';
+      resetbtn.click();
+    };
   </script>
 </body>
 </html>
-
-
