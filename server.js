@@ -136,7 +136,7 @@ Thank you for taking the time to share this with me. I feel different... like a 
 
   try {
     const chatCompletion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o",
       messages: messageHistory,
       max_tokens: 100,
     });
