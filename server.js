@@ -151,11 +151,19 @@ function shouldConvert() {
     Math.random() < 1 / 3;
 }
 
+// ✅ UPDATED: Accepts `mode` from frontend and switches if needed
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
+  const requestedMode = req.body.mode || currentMode;
+
   if (!userMessage) return res.status(400).json({ reply: "No message provided." });
 
+  if (requestedMode !== currentMode) {
+    initializeMode(requestedMode);
+  }
+
   messageHistory.push({ role: "user", content: userMessage });
+
   if (currentMode === "practice") trackMentions(userMessage);
 
   if (currentMode === "practice" && shouldConvert()) {
@@ -184,11 +192,14 @@ Thank you for taking the time to share this with me. I feel different... like a 
   }
 });
 
+// ✅ UPDATED: Respects requested mode on reset
 app.post("/reset", (req, res) => {
-  initializeMode(currentMode);
+  const mode = req.body.mode || currentMode;
+  initializeMode(mode);
   res.json({ message: "Conversation reset." });
 });
 
+// 🔄 Explicit mode switch (still useful if needed)
 app.post("/set-mode", (req, res) => {
   const mode = req.body.mode;
   if (!["practice", "teacher"].includes(mode)) {
@@ -198,11 +209,13 @@ app.post("/set-mode", (req, res) => {
   res.json({ message: `Mode switched to ${mode}` });
 });
 
+// Serve static frontend
 app.use(express.static(path.join(__dirname)));
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
+// Start server
 app.listen(PORT, () => {
   console.log("✅ Server running on port " + PORT);
 });
