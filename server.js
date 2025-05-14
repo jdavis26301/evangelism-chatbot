@@ -153,10 +153,45 @@ function shouldConvert() {
 
 // ✅ UPDATED: Accepts `mode` from frontend and switches if needed
 app.post("/chat", async (req, res) => {
-  const userMessage = req.body.message;
-  const requestedMode = req.body.mode || currentMode;
+  const { message, mode } = req.body;
 
-  if (!userMessage) return res.status(400).json({ reply: "No message provided." });
+  if (!message) {
+    return res.status(400).json({ reply: "No message provided." });
+  }
+
+  // Optional: Update mode if different from current
+  if (mode && mode !== currentMode) {
+    initializeMode(mode);
+  }
+
+  messageHistory.push({ role: "user", content: message });
+  if (currentMode === "practice") trackMentions(message);
+
+  if (currentMode === "practice" && shouldConvert()) {
+    const response = `I... I think I get it now. It finally makes sense. I'd like to pray...
+
+"God, I know I’m a sinner. I’ve broken Your commandments. I believe Jesus died for my sins and rose again. I repent and put my trust in Jesus as Lord and Savior. Please forgive me and change me. Amen."
+
+Thank you for taking the time to share this with me. I feel different... like a weight’s been lifted.`;
+    messageHistory.push({ role: "assistant", content: response });
+    return res.json({ reply: response });
+  }
+
+  try {
+    const chatCompletion = await openai.chat.completions.create({
+      model: "gpt-4-turbo",
+      messages: messageHistory,
+      max_tokens: 300
+    });
+
+    const reply = chatCompletion.choices?.[0]?.message?.content || "Sorry, I didn’t quite catch that. Try again!";
+    messageHistory.push({ role: "assistant", content: reply });
+    res.json({ reply });
+  } catch (error) {
+    console.error("OpenAI Error:", error.response?.data || error.message);
+    res.status(500).json({ reply: "There was a problem reaching the bot. Please try again later." });
+  }
+});
 
   if (requestedMode !== currentMode) {
     initializeMode(requestedMode);
