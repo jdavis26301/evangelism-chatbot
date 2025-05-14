@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Evangelism Practice & Teaching Bot</title>
+  <meta charset="UTF-8" />
+  <title>Evangelism Bot – Practice & Teacher</title>
   <style>
     body {
       background-color: #222;
@@ -11,7 +11,6 @@
       text-align: center;
       padding: 10px;
     }
-
     #chatbox {
       width: 90%;
       max-width: 800px;
@@ -23,32 +22,24 @@
       overflow-y: scroll;
       text-align: left;
     }
-
     #inputbox {
       width: 70%;
       padding: 10px;
       font-size: 16px;
     }
-
     button {
       padding: 10px 15px;
       font-size: 16px;
       margin: 5px;
       cursor: pointer;
     }
-
-    #modeToggleBtn {
-      background-color: #444;
-      color: #eee;
-    }
-
     .controls {
       margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <h2>👣 Evangelism Bot: <span id="modeLabel">Mr. Nice Guy</span></h2>
+  <h2>👣 Evangelism Practice Partner and Teacher: <span id="modeLabel">Mr. Nice Guy</span></h2>
 
   <div id="chatbox"></div>
 
@@ -86,7 +77,7 @@
       if (!voiceEnabled || !window.speechSynthesis) return;
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "en-US";
-      utterance.pitch = 0.6;
+      utterance.pitch = 0.8;
       utterance.rate = 1;
       speechSynthesis.cancel();
       speechSynthesis.speak(utterance);
@@ -103,8 +94,10 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: userInput, mode: currentMode })
         });
+
         const data = await response.json();
-        appendMessage(currentMode === "practice" ? "Mr. Nice Guy" : "Teacher", data.reply);
+        const botName = currentMode === "practice" ? "Mr. Nice Guy" : "Teacher";
+        appendMessage(botName, data.reply);
         speakMessage(data.reply);
       } catch (err) {
         appendMessage("System", "❌ Error sending message.");
@@ -130,10 +123,10 @@
         });
         if (response.ok) {
           chatbox.innerHTML = "";
-          appendMessage("System", "Conversation has been reset. You are now speaking with someone new.");
+          appendMessage("System", "Conversation has been reset.");
         }
       } catch (err) {
-        appendMessage("System", "❌ Failed to reset.");
+        appendMessage("System", "❌ Failed to reset conversation.");
       }
     };
 
@@ -143,26 +136,29 @@
     };
 
     modeToggleBtn.onclick = async () => {
-      currentMode = currentMode === "practice" ? "teacher" : "practice";
-
+      const newMode = currentMode === "practice" ? "teacher" : "practice";
       try {
-        await fetch("/set-mode", {
+        const response = await fetch("/set-mode", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mode: currentMode })
+          body: JSON.stringify({ mode: newMode })
         });
 
-        chatbox.innerHTML = "";
-        modeLabel.textContent = currentMode === "practice" ? "Mr. Nice Guy" : "Teacher";
-        modeToggleBtn.textContent = currentMode === "practice" ? "Switch to Teacher" : "Switch to Mr. Nice Guy";
-
-        resetbtn.click();
+        if (response.ok) {
+          currentMode = newMode;
+          modeLabel.textContent = currentMode === "practice" ? "Mr. Nice Guy" : "Teacher";
+          modeToggleBtn.textContent = currentMode === "practice" ? "Switch to Teacher" : "Switch to Mr. Nice Guy";
+          chatbox.innerHTML = "";
+          resetbtn.click();
+        } else {
+          appendMessage("System", "❌ Server failed to switch mode.");
+        }
       } catch (err) {
-        appendMessage("System", "❌ Failed to switch mode.");
+        appendMessage("System", "❌ Error switching mode.");
       }
     };
 
-    // 🎤 Microphone
+    // Microphone support
     if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
