@@ -120,8 +120,6 @@ function initializeMode(mode) {
   }
 }
 
-initializeMode("practice");
-
 function trackMentions(text) {
   const normalized = text.toLowerCase();
   if (
@@ -151,21 +149,17 @@ function shouldConvert() {
     Math.random() < 1 / 3;
 }
 
-// ✅ UPDATED: Accepts `mode` from frontend and switches if needed
+// ✅ Unified chat endpoint
 app.post("/chat", async (req, res) => {
   const { message, mode } = req.body;
+  if (!message) return res.status(400).json({ reply: "No message provided." });
 
-  if (!message) {
-    return res.status(400).json({ reply: "No message provided." });
-  }
-
-  // Optional but safe: switch mode if frontend mode differs
+  // Sync mode if changed
   if (mode && mode !== currentMode) {
     initializeMode(mode);
   }
 
   messageHistory.push({ role: "user", content: message });
-
   if (currentMode === "practice") trackMentions(message);
 
   if (currentMode === "practice" && shouldConvert()) {
@@ -194,50 +188,17 @@ Thank you for taking the time to share this with me. I feel different... like a 
   }
 });
 
-  if (requestedMode !== currentMode) {
-    initializeMode(requestedMode);
-  }
-
-  messageHistory.push({ role: "user", content: userMessage });
-
-  if (currentMode === "practice") trackMentions(userMessage);
-
-  if (currentMode === "practice" && shouldConvert()) {
-    const response = `I... I think I get it now. It finally makes sense. I'd like to pray...
-
-"God, I know I’m a sinner. I’ve broken Your commandments. I believe Jesus died for my sins and rose again. I repent and put my trust in Jesus as Lord and Savior. Please forgive me and change me. Amen."
-
-Thank you for taking the time to share this with me. I feel different... like a weight’s been lifted.`;
-    messageHistory.push({ role: "assistant", content: response });
-    return res.json({ reply: response });
-  }
-
-  try {
-    const chatCompletion = await openai.chat.completions.create({
-      model: "gpt-4-turbo",
-      messages: messageHistory,
-      max_tokens: 300
-    });
-
-    const reply = chatCompletion.choices?.[0]?.message?.content || "Sorry, I didn’t quite catch that. Try again!";
-    messageHistory.push({ role: "assistant", content: reply });
-    res.json({ reply });
-  } catch (error) {
-    console.error("OpenAI Error:", error.response?.data || error.message);
-    res.status(500).json({ reply: "There was a problem reaching the bot. Please try again later." });
-  }
-});
-
-// ✅ UPDATED: Respects requested mode on reset
+// ✅ Resets conversation with current or requested mode
 app.post("/reset", (req, res) => {
-  const mode = req.body.mode || currentMode;
-  initializeMode(mode);
+  const { mode } = req.body;
+  const requestedMode = mode || currentMode;
+  initializeMode(requestedMode);
   res.json({ message: "Conversation reset." });
 });
 
-// 🔄 Explicit mode switch (still useful if needed)
+// Optional: explicit mode switch
 app.post("/set-mode", (req, res) => {
-  const mode = req.body.mode;
+  const { mode } = req.body;
   if (!["practice", "teacher"].includes(mode)) {
     return res.status(400).json({ message: "Invalid mode." });
   }
@@ -245,13 +206,12 @@ app.post("/set-mode", (req, res) => {
   res.json({ message: `Mode switched to ${mode}` });
 });
 
-// Serve static frontend
+// Static frontend support
 app.use(express.static(path.join(__dirname)));
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log("✅ Server running on port " + PORT);
 });
