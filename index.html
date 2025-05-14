@@ -72,7 +72,7 @@
     const modeLabel = document.getElementById("modeLabel");
 
     let voiceEnabled = true;
-    let currentMode = "practice"; // or "teacher"
+    let currentMode = "practice";
     let speechRecognitionActive = false;
 
     const appendMessage = (sender, text) => {
@@ -142,15 +142,27 @@
       voiceToggleBtn.innerText = voiceEnabled ? "🔊 Voice On" : "🔇 Voice Off";
     };
 
-    modeToggleBtn.onclick = () => {
+    modeToggleBtn.onclick = async () => {
       currentMode = currentMode === "practice" ? "teacher" : "practice";
-      chatbox.innerHTML = "";
-      modeLabel.textContent = currentMode === "practice" ? "Mr. Nice Guy" : "Teacher";
-      modeToggleBtn.textContent = currentMode === "practice" ? "Switch to Teacher" : "Switch to Mr. Nice Guy";
-      resetbtn.click();
+
+      try {
+        await fetch("/set-mode", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: currentMode })
+        });
+
+        chatbox.innerHTML = "";
+        modeLabel.textContent = currentMode === "practice" ? "Mr. Nice Guy" : "Teacher";
+        modeToggleBtn.textContent = currentMode === "practice" ? "Switch to Teacher" : "Switch to Mr. Nice Guy";
+
+        resetbtn.click();
+      } catch (err) {
+        appendMessage("System", "❌ Failed to switch mode.");
+      }
     };
 
-    // 🎤 Microphone Dictation
+    // 🎤 Microphone
     if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
@@ -174,7 +186,6 @@
         inputbox.value = transcript;
         micbtn.innerText = "🎤 Speak";
         speechRecognitionActive = false;
-        // Do not auto-send in teacher mode
         if (currentMode === "practice") {
           sendMessage(transcript);
         }
@@ -192,7 +203,7 @@
     } else {
       micbtn.disabled = true;
       micbtn.innerText = "🎤 Not Supported";
-      appendMessage("System", "❌ Speech recognition not supported in this browser.");
+      appendMessage("System", "❌ Speech recognition not supported.");
     }
   </script>
 </body>
