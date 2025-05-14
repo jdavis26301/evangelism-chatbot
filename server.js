@@ -159,12 +159,13 @@ app.post("/chat", async (req, res) => {
     return res.status(400).json({ reply: "No message provided." });
   }
 
-  // Optional: Update mode if different from current
+  // Optional but safe: switch mode if frontend mode differs
   if (mode && mode !== currentMode) {
     initializeMode(mode);
   }
 
   messageHistory.push({ role: "user", content: message });
+
   if (currentMode === "practice") trackMentions(message);
 
   if (currentMode === "practice" && shouldConvert()) {
