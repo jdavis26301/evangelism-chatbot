@@ -12,16 +12,14 @@ app.use(bodyParser.json());
 const PORT = process.env.PORT || 10000;
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+let messageHistory = [];
+let currentMode = "practice"; // practice | teacher
+let currentPersona = null;
+let wjdjMentions = 0;
+let ccraFtMentions = 0;
+
 const names = ["Rob", "Dave", "Chris", "Kevin", "Tony", "Mark", "Josh", "Steve"];
-const jobs = [
-  "truck driver",
-  "construction worker",
-  "college student",
-  "factory worker",
-  "mechanic",
-  "veteran",
-  "electrician"
-];
+const jobs = ["truck driver", "construction worker", "college student", "factory worker", "mechanic", "veteran", "electrician"];
 
 function generatePersona() {
   const name = names[Math.floor(Math.random() * names.length)];
@@ -30,12 +28,7 @@ function generatePersona() {
   return { name, intro: `Hi, I’m ${name}. I’m ${age} years old, and I work as a ${job}. I’ve been thinking a lot lately about life, death, and what happens after.` };
 }
 
-let messageHistory = [];
-let currentPersona = null;
-let wjdjMentions = 0;
-let ccraFtMentions = 0;
-
-function initializePersona() {
+function initializePracticePersona() {
   const persona = generatePersona();
   currentPersona = persona;
   wjdjMentions = 0;
@@ -83,11 +76,51 @@ Stay in character, and don’t preach or teach. Let the user share the Gospel.
       `
     }
   ];
-
-  console.log("✅ Persona initialized:", persona.intro);
+  console.log("✅ Practice persona initialized:", persona.intro);
 }
 
-initializePersona();
+function initializeTeacherPersona() {
+  messageHistory = [
+    {
+      role: "system",
+      content: `
+You are a friendly and knowledgeable evangelism teacher. Your job is to clearly and patiently teach people how to share their faith using two evangelism frameworks: WDJD and CCRAFT.
+
+Do not act like a character. Speak plainly and provide examples.
+
+WDJD stands for:
+- Would you consider yourself a good person?
+- Do you think you’ve kept the Ten Commandments?
+- Judgment: If God judged you, would you be guilty?
+- Destiny: Heaven or Hell?
+
+CCRAFT stands for:
+- Concern: Does that concern you?
+- Cross: Jesus died and rose to pay your penalty
+- Repentance: Turn from sin
+- And...
+- Faith: Trust in Jesus alone
+- Truth: The Word of God calls for a response
+
+Explain each section with kindness and clarity, using examples and Bible references. Help the user prepare to go out and share the Gospel. When they understand the material well, encourage them to click the button to begin practicing with a simulated person.
+
+Always remain a helpful teacher. Do not roleplay or pretend to be confused or unconverted.
+      `
+    }
+  ];
+  console.log("📘 Teacher mode initialized.");
+}
+
+function initializeMode(mode) {
+  currentMode = mode;
+  if (mode === "practice") {
+    initializePracticePersona();
+  } else {
+    initializeTeacherPersona();
+  }
+}
+
+initializeMode("practice");
 
 function trackMentions(text) {
   const normalized = text.toLowerCase();
@@ -112,7 +145,10 @@ function trackMentions(text) {
 }
 
 function shouldConvert() {
-  return wjdjMentions >= 4 && ccraFtMentions >= 5 && Math.random() < 1 / 3;
+  return currentMode === "practice" &&
+    wjdjMentions >= 4 &&
+    ccraFtMentions >= 5 &&
+    Math.random() < 1 / 3;
 }
 
 app.post("/chat", async (req, res) => {
@@ -120,30 +156,27 @@ app.post("/chat", async (req, res) => {
   if (!userMessage) return res.status(400).json({ reply: "No message provided." });
 
   messageHistory.push({ role: "user", content: userMessage });
-  trackMentions(userMessage);
+  if (currentMode === "practice") trackMentions(userMessage);
 
-  if (shouldConvert()) {
-    messageHistory.push({
-      role: "assistant",
-      content: `I... I think I get it now. It finally makes sense. I'd like to pray...
+  if (currentMode === "practice" && shouldConvert()) {
+    const response = `I... I think I get it now. It finally makes sense. I'd like to pray...
 
 "God, I know I’m a sinner. I’ve broken Your commandments. I believe Jesus died for my sins and rose again. I repent and put my trust in Jesus as Lord and Savior. Please forgive me and change me. Amen."
 
-Thank you for taking the time to share this with me. I feel different... like a weight’s been lifted.`
-    });
-    return res.json({ reply: messageHistory[messageHistory.length - 1].content });
+Thank you for taking the time to share this with me. I feel different... like a weight’s been lifted.`;
+    messageHistory.push({ role: "assistant", content: response });
+    return res.json({ reply: response });
   }
 
   try {
     const chatCompletion = await openai.chat.completions.create({
       model: "gpt-4-turbo",
       messages: messageHistory,
-      max_tokens: 100,
+      max_tokens: 300
     });
 
     const reply = chatCompletion.choices?.[0]?.message?.content || "Sorry, I didn’t quite catch that. Try again!";
     messageHistory.push({ role: "assistant", content: reply });
-
     res.json({ reply });
   } catch (error) {
     console.error("OpenAI Error:", error.response?.data || error.message);
@@ -152,8 +185,17 @@ Thank you for taking the time to share this with me. I feel different... like a 
 });
 
 app.post("/reset", (req, res) => {
-  initializePersona();
+  initializeMode(currentMode);
   res.json({ message: "Conversation reset." });
+});
+
+app.post("/set-mode", (req, res) => {
+  const mode = req.body.mode;
+  if (!["practice", "teacher"].includes(mode)) {
+    return res.status(400).json({ message: "Invalid mode." });
+  }
+  initializeMode(mode);
+  res.json({ message: `Mode switched to ${mode}` });
 });
 
 app.use(express.static(path.join(__dirname)));
